@@ -21,7 +21,8 @@ module Genesis
       end
 
       def self.config_cache= (obj)
-        @@config_cache = obj
+        # cull all keys to strings to ensure consistent access
+        @@config_cache = obj.inject({}){|memo,(k,v)| memo[k.to_s] = v; memo}
       end
 
       def self.collins
@@ -47,14 +48,14 @@ module Genesis
 
         # Load external logging modules and send log to them
         if @@loggers.nil?
-          @@loggers = self.config_cache[:loggers].map {|logger|
+          @@loggers = self.config_cache['loggers'].map do |logger|
             begin
               require "logging/#{logger.downcase}"
               Logging.const_get(logger.to_sym)
             rescue LoadError
               puts "Could not load logger #{logger}"
             end
-          }.compact
+          end.compact
         end
         @@loggers.each {|logger| logger.log logline}
       end
