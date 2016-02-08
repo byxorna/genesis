@@ -41,7 +41,8 @@ genesis_conf = nil
 # don't put in a block since any raise will look like it is coming from the get
 data = Genesis::RetryingFetcher.get(GENESIS_CONF_URL)
 begin
-  genesis_config = YAML::load(data)
+  # symbolize keys for loaded file
+  genesis_config = YAML.load(data).inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
 rescue => e
   if STDIN.tty?
     puts "GENESIS_CONF_URL has invalid yaml: #{e.message}"
@@ -75,8 +76,8 @@ puts '---', ''
 
 # fetch stage2
 loop do
-  Genesis::RetryingFetcher.get(GENESIS_STAGE2_URL) do |data|
-    File.open(GENESIS_STAGE2_SCRIPT, 'w', 0555) { |file| file.puts data }
+  Genesis::RetryingFetcher.get(GENESIS_STAGE2_URL) do |d|
+    File.open(GENESIS_STAGE2_SCRIPT, 'w', 0555) { |file| file.puts d }
   end
 
   # verify stage 2
@@ -85,7 +86,7 @@ loop do
   break if syntax_valid
 
   puts ''
-  try_fetching = Genesis::PromptCLI.ask "Genesis Stage 2 is corrupt. Would you like to retry?" 
+  try_fetching = Genesis::PromptCLI.ask "Genesis Stage 2 is corrupt. Would you like to retry?"
   unless  try_fetching
     raise RuntimeError, msg + "Genesis Stage 2 is corrupt. Execution halted!"
   end
