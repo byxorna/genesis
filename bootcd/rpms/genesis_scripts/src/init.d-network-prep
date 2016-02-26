@@ -12,22 +12,34 @@
 ### END INIT INFO
 
 case "$1" in
-    start)
-	for int in `ip link | grep -v lo | awk '/ qlen / {print $2}' | sed 's/://g'`
-	do
-	    cat > /etc/sysconfig/network-scripts/ifcfg-$int <<EOF
-DEVICE=$int
+  start)
+    # bring up the correct partition
+    if [[ -d /sys/class/net/ib0 ]] ; then
+      set -e
+      echo "Creating infiniband partition 2 on ib0"
+      echo 2 > /sys/class/net/ib0/create_child
+      stat /sys/class/net/ib0.8002
+    else
+      echo "Unable to find ib0! Unable to create child interface. FUCK!"
+    fi
+
+    for f in /sys/class/net/* ; do
+      iface="$(basename $f)"
+      if [[ $iface != lo ]] ; then
+        cat > /etc/sysconfig/network-scripts/ifcfg-$iface <<EOF
+DEVICE=$iface
 BOOTPROTO=dhcp
 ONBOOT=no
 NAME=nic
 EOF
-	    # explicitly bring up only one interface now to prevent
-	    # using lots of dhcp dynamic addresses
-	    # and avoid routing issues with multiple interface on same network
-	    [[ -z "$network_up" ]] && /sbin/dhclient -1 -timeout 15 $int && network_up="$int"
-	done
-	;;
-    *)  ;;
+        if [[ -z "$network_up" ]] ; then
+          echo "DHCPing on $iface"
+          /sbin/dhclient -1 -timeout 15 $iface && network_up="$iface" && ip -o -4 a show dev $iface
+        fi
+      fi
+    done
+  ;;
+  *)  ;;
 esac
 
 exit 0
