@@ -105,6 +105,38 @@ tmpfs     /var/cache/yum  tmpfs   mode=1777         0
 _EOF_
 
 
+echo '>>>> adding ib modules to modprobe.d'
+cat >/etc/modprobe.d/ib_ipoib.conf <<"__EOF__"
+alias netdev-ib* ib_ipoib
+options ib_ipoib send_queue_size=128 recv_queue_size=128
+__EOF__
+cat >/etc/modprobe.d/mlx4.conf <<"__EOF__"
+# mlx4_core gets automatically loaded, load mlx4_en also (LP: #1115710)
+softdep mlx4_core post: mlx4_en
+__EOF__
+cat >/etc/sysconfig/modules/infiniband.modules <<"__EOF__"
+#!/bin/bash
+if [[ ! -d /sys/class/net/ib0 ]] ; then
+  /sbin/modprobe ib_addr \
+    ib_core \
+    ib_mad \
+    ib_sa \
+    ib_cm \
+    ib_uverbs \
+    ib_ucm \
+    ib_umad \
+    iw_cm \
+    rdma_cm \
+    rdma_ucm \
+    mlx4_core \
+    mlx4_ib \
+    ib_ipoib
+  echo "Loaded infiniband modules"
+fi
+__EOF__
+chmod +x /etc/sysconfig/modules/infiniband.modules
+
+
 echo '>>>> setting hostname'
 sed -i -e 's/HOSTNAME=.*/HOSTNAME=genesis/' /etc/sysconfig/network
 
@@ -203,6 +235,7 @@ su - -c 'source /etc/profile.d/rvm.sh && bundle install --system --gemfile /root
 echo '>>>> installing basic genesis framework gems'
 bash -c "source /etc/profile.d/rvm.sh && gem install genesis_retryingfetcher"
 bash -c "source /etc/profile.d/rvm.sh && gem install genesis_promptcli"
+bash -c "source /etc/profile.d/rvm.sh && gem install genesis_framework"
 bash -c "source /etc/profile.d/rvm.sh && gem list"
 
 #echo '>>>> cleanup now unneeds RPMs to make image smaller'

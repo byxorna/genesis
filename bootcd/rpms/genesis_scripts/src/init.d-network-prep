@@ -23,6 +23,15 @@ case "$1" in
       echo "Unable to find ib0! Unable to create child interface. FUCK!"
     fi
 
+    if [[ -z "$network_up" ]] ; then
+      echo "DHCPing on ib0.8002"
+      if /sbin/dhclient -1 -timeout 30 ib0.8002 ; then
+        echo "Unable to DHCP on ib0.8002 :("
+      else
+        ip -o -4 a show dev ib0.8002
+      fi
+    fi
+
     for f in /sys/class/net/* ; do
       iface="$(basename $f)"
       if [[ $iface != lo ]] ; then
@@ -32,10 +41,6 @@ BOOTPROTO=dhcp
 ONBOOT=no
 NAME=nic
 EOF
-        if [[ -z "$network_up" ]] ; then
-          echo "DHCPing on $iface"
-          /sbin/dhclient -1 -timeout 15 $iface && network_up="$iface" && ip -o -4 a show dev $iface
-        fi
       fi
     done
   ;;
