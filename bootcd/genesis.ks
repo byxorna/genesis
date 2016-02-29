@@ -68,6 +68,7 @@ glibc-headers
 
 %post
 set -e
+set -x
 repo_base_url="http://ftp.scientificlinux.org/linux/scientific/6x/x86_64"
 # Apply Genesis Live OS customizations
 echo '*****************************************'
@@ -115,26 +116,28 @@ cat >/etc/modprobe.d/mlx4.conf <<"__EOF__"
 softdep mlx4_core post: mlx4_en
 __EOF__
 cat >/etc/sysconfig/modules/infiniband.modules <<"__EOF__"
-#!/bin/bash
-if [[ ! -d /sys/class/net/ib0 ]] ; then
-  /sbin/modprobe ib_addr \
-    ib_core \
-    ib_mad \
-    ib_sa \
-    ib_cm \
-    ib_uverbs \
-    ib_ucm \
-    ib_umad \
-    iw_cm \
-    rdma_cm \
-    rdma_ucm \
-    mlx4_core \
-    mlx4_ib \
-    ib_ipoib
-  echo "Loaded infiniband modules"
-fi
+#!/bin/sh
+set -x
+/sbin/modprobe ib_addr
+/sbin/modprobe ib_core
+/sbin/modprobe ib_mad
+/sbin/modprobe ib_sa
+/sbin/modprobe ib_cm
+/sbin/modprobe ib_uverbs
+/sbin/modprobe ib_ucm
+/sbin/modprobe ib_umad
+/sbin/modprobe iw_cm
+/sbin/modprobe rdma_cm
+/sbin/modprobe rdma_ucm
+/sbin/modprobe mlx4_core
+/sbin/modprobe mlx4_ib
+/sbin/modprobe ib_ipoib
+echo "Loaded infiniband modules"
 __EOF__
-chmod +x /etc/sysconfig/modules/infiniband.modules
+chmod 755 /etc/sysconfig/modules/infiniband.modules
+
+# make sure any console can get a login. sigh...
+rm /etc/securetty
 
 
 echo '>>>> setting hostname'

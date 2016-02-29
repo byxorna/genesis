@@ -11,6 +11,8 @@ Source2:        src/sysconfig-init.diff
 Source3:        src/tty.conf.override
 Source4:        src/genesis-bootloader
 Source5:        src/login-shell
+Source6:        src/ttyS0.upstart
+Source7:        src/ttyS1.upstart
 Summary:        Scripts used by Genesis in the bootcd image
 Group:          System Environment/Base
 Requires:       initscripts rootfiles patch
@@ -40,6 +42,9 @@ install -m 644 -T %{SOURCE3}   $RPM_BUILD_ROOT/etc/init/tty.conf.override
 # add helper for agetty
 install -m 555 -T %{SOURCE5}   $RPM_BUILD_ROOT/root/login-shell
 
+install -m 644 -T %{SOURCE6}   $RPM_BUILD_ROOT/etc/init/ttyS0.conf
+install -m 644 -T %{SOURCE7}   $RPM_BUILD_ROOT/etc/init/ttyS1.conf
+
 # add the bootloader
 mkdir -p $RPM_BUILD_ROOT/usr/bin/
 install -m 555 -T %{SOURCE4}   $RPM_BUILD_ROOT/usr/bin/genesis-bootloader
@@ -52,6 +57,8 @@ install -m 555 -T %{SOURCE4}   $RPM_BUILD_ROOT/usr/bin/genesis-bootloader
 %config /etc/init.d/network-prep
 %config /etc/sysconfig/init.diff
 %config /etc/init/tty.conf.override
+%config /etc/init/ttyS0.conf
+%config /etc/init/ttyS1.conf
 %config /root/.bash_profile.genesis_scripts
 /usr/bin/genesis-bootloader
 /root/login-shell
