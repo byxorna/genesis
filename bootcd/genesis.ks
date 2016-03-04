@@ -54,6 +54,7 @@ tmux
 traceroute
 util-linux-ng
 vim-minimal
+bind-utils
 yum
 # needed for rvm
 which
@@ -68,6 +69,7 @@ glibc-headers
 
 %post
 set -e
+set -x
 repo_base_url="http://ftp.scientificlinux.org/linux/scientific/6x/x86_64"
 # Apply Genesis Live OS customizations
 echo '*****************************************'
@@ -104,6 +106,8 @@ tmpfs     /var/tmp        tmpfs   mode=1777         0
 tmpfs     /var/cache/yum  tmpfs   mode=1777         0
 _EOF_
 
+# make sure any console can get a login. sigh...
+rm /etc/securetty
 
 echo '>>>> setting hostname'
 sed -i -e 's/HOSTNAME=.*/HOSTNAME=genesis/' /etc/sysconfig/network
@@ -203,6 +207,7 @@ su - -c 'source /etc/profile.d/rvm.sh && bundle install --system --gemfile /root
 echo '>>>> installing basic genesis framework gems'
 bash -c "source /etc/profile.d/rvm.sh && gem install genesis_retryingfetcher"
 bash -c "source /etc/profile.d/rvm.sh && gem install genesis_promptcli"
+bash -c "source /etc/profile.d/rvm.sh && gem install genesis_framework"
 bash -c "source /etc/profile.d/rvm.sh && gem list"
 
 #echo '>>>> cleanup now unneeds RPMs to make image smaller'
