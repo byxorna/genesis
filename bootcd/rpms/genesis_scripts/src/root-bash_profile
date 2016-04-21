@@ -1,4 +1,4 @@
-
+RESTART_DELAY_INITIAL=120
 GENESIS_MODE="$(grep -o -e 'GENESIS_MODE=[^ ]*' /proc/cmdline | cut -c14-)"
 
 # setup the ruby environment we need
@@ -6,9 +6,19 @@ source /etc/profile.d/rvm.sh
 rvm list
 ruby --version
 
-if [[ ! -z $GENESIS_MODE ]] && [ ! -e "/var/run/bootloader-autorun.lock" ]
-  then
-    touch /var/run/bootloader-autorun.lock
+if [[ ! -z $GENESIS_MODE ]] ; then (
+  flock -x 666 || exit 0
+  echo "Running genesis-bootloader"
+  while [ 1 ] ; do
     # disable task execution prompting when doing initial target run
-    GENESIS_PROMPT_TIMEOUT=0  /usr/bin/genesis-bootloader 2>&1 | tee /var/log/genesis-bootloader.log
-fi
+    GENESIS_PROMPT_TIMEOUT=0  /usr/bin/genesis-bootloader 2>&1 | tee -a /var/log/genesis-bootloader.log | tee /dev/console
+    exitcode=$?
+    if [[ $exitcode -ne 0 ]] ; then
+      echo "Genesis failed to run successfully. Restarting in a bit"
+      sleep $(( $RESTART_DELAY_INITIAL + $RANDOM % 60 ))
+    else
+      echo "Genesis completed with exit code $exitcode"
+      break
+    fi
+  done
+) 666>/var/run/bootloader-autorun.lock ; fi
